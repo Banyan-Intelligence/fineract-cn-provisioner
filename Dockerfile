@@ -26,6 +26,9 @@ RUN ./gradlew publishToMavenLocal
 FROM openjdk:8-jdk-alpine AS runner
 
 ARG provisioner_port=2020
+ARG jmx_port=9010
+ARG jmx_prome_port=8080
+
 
 ENV server.max-http-header-size=16384 \
     cassandra.clusterName="Test Cluster" \
@@ -34,5 +37,17 @@ ENV server.max-http-header-size=16384 \
 WORKDIR /tmp
 
 COPY --from=builder /builddir/service/build/libs/service-0.1.0-BUILD-SNAPSHOT-boot.jar ./provisioner-service-boot.jar
+COPY jmx_prometheus_javaagent-0.20.0.jar /tmp/jmx_prometheus_javaagent-0.20.0.jar
+COPY jmx_config.yaml /tmp/jmx_config.yaml
 
-CMD ["java", "-jar", "provisioner-service-boot.jar"]
+EXPOSE $jmx_port
+EXPOSE $jmx_prome_port
+ENV JAVA_OPTS="-Dcom.sun.management.jmxremote \
+               -Dcom.sun.management.jmxremote.port=9010 \
+               -Dcom.sun.management.jmxremote.rmi.port=9010 \
+               -Dcom.sun.management.jmxremote.authenticate=false \
+               -Dcom.sun.management.jmxremote.ssl=false \
+               -Djava.rmi.server.hostname=0.0.0.0"
+
+# CMD ["java", "-jar", "provisioner-service-boot.jar"]
+ENTRYPOINT exec java $JAVA_OPTS -javaagent:"jmx_prometheus_javaagent-0.20.0.jar=8080:jmx_config.yaml" -jar provisioner-service-boot.jar
