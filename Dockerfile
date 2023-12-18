@@ -40,11 +40,10 @@ COPY --from=builder /builddir/service/build/libs/service-0.1.0-BUILD-SNAPSHOT-bo
 COPY jmx_prometheus_javaagent-0.20.0.jar /tmp/jmx_prometheus_javaagent-0.20.0.jar
 COPY jmx_config.yaml /tmp/jmx_config.yaml
 
-EXPOSE $jmx_port
 EXPOSE $jmx_prome_port
 ENV JAVA_OPTS="-Dcom.sun.management.jmxremote \
-               -Dcom.sun.management.jmxremote.port=9010 \
-               -Dcom.sun.management.jmxremote.rmi.port=9010 \
+               -Dcom.sun.management.jmxremote.port=$jmx_port \
+               -Dcom.sun.management.jmxremote.rmi.port=$jmx_port \
                -Dcom.sun.management.jmxremote.authenticate=false \
                -Dcom.sun.management.jmxremote.ssl=false \
                -Djava.rmi.server.hostname=0.0.0.0"
